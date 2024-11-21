@@ -12,11 +12,13 @@ wait_until_ready() {
 
   echo "Waiting for $service_name to be ready..."
   while true; do
-    current_status=$(eval "$command")
+    current_status=$(eval "$command" | xargs | tr -d '\r')
     if [ "$current_status" == "$expected_status" ]; then
       echo "$service_name is ready!"
       break
     fi
+	echo "Current status: [$current_status]"
+    echo "Expected status: [$expected_status]"
     echo "$service_name is not ready yet... checking again in 10 seconds."
     sleep 10
   done
@@ -25,7 +27,7 @@ wait_until_ready() {
 # Start PostgreSQL Flexible Server
 echo "Starting PostgreSQL Flexible Server: $POSTGRES_SERVER"
 az postgres flexible-server start --name $POSTGRES_SERVER --resource-group $RESOURCE_GROUP
-wait_until_ready "az postgres flexible-server show --name $POSTGRES_SERVER --resource-group $RESOURCE_GROUP --query 'state' -o tsv" "Available" "PostgreSQL Flexible Server"
+wait_until_ready "az postgres flexible-server show --name $POSTGRES_SERVER --resource-group $RESOURCE_GROUP --query 'state' -o tsv" "Ready" "PostgreSQL Flexible Server"
 
 # Start Container Instance
 echo "Starting Container Instance: $CONTAINER_INSTANCE"
