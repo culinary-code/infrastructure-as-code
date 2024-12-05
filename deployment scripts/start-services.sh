@@ -1,6 +1,7 @@
 #!/bin/bash
 RESOURCE_GROUP="rg-stage24-webchefs"
 WEB_APP="culinarycode"
+KEYCLOAK_APP="culinarycode-idp"
 POSTGRES_SERVER="culinarycode-database"
 CONTAINER_INSTANCE="culinarycode-idp"
 
@@ -33,6 +34,11 @@ wait_until_ready "az postgres flexible-server show --name $POSTGRES_SERVER --res
 echo "Starting Container Instance: $CONTAINER_INSTANCE"
 az container start --name $CONTAINER_INSTANCE --resource-group $RESOURCE_GROUP
 wait_until_ready "az container show --name $CONTAINER_INSTANCE --resource-group $RESOURCE_GROUP --query 'instanceView.state' -o tsv" "Running" "Container Instance"
+
+# Start Keycloak Web App
+echo "Starting Web App: $KEYCLOAK_APP"
+az webapp start --name $KEYCLOAK_APP --resource-group $RESOURCE_GROUP
+wait_until_ready "az webapp show --name $KEYCLOAK_APP --resource-group $RESOURCE_GROUP --query 'state' -o tsv" "Running" "Keycloak Web App"
 
 # Start Web App
 echo "Starting Web App: $WEB_APP"
