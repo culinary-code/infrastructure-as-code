@@ -1,0 +1,78 @@
+﻿name: culinary-code
+
+services:
+  idp_postgres:
+    image: postgres:15.4-alpine
+    volumes:
+      - idp_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+
+  idp_keycloak:
+    image: steffenvochten/culinarycode_idp
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL_HOST=idp_postgres
+      - KC_DB_URL_DATABASE=keycloak
+      - KC_DB_USERNAME=keycloak
+      - KC_DB_PASSWORD=password
+      - KC_HOSTNAME_STRICT=false
+      - KC_HOSTNAME_STRICT_HTTPS=false
+      - KC_HTTP_ENABLED=true
+      - KC_PROXY=edge
+    ports:
+      - "8180:8080"
+    depends_on:
+      - idp_postgres
+  
+  postgres:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - backend_data:/var/lib/postgresql/data
+
+  backend:
+    image: steffenvochten/culinarycode_backend
+    container_name: backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:5114
+      - AzureOpenAI__ApiKey=
+      - AzureOpenAI__Endpoint=
+      - AzureStorage__ConnectionString=DefaultEndpointsProtocol=https;AccountName=yourcodestoragename;AccountKey=youraccountkey;EndpointSuffix=core.windows.net;
+      - AzureStorage__ContainerName=yourcontainername
+      - Database__ConnectionString=Host=postgres;Port=5432;Username=myuser;Password=mypassword;Database=mydatabase;
+      - EmailService__SmtpClient=smtp.gmail.com
+      - EmailService__SmtpPassword=yoursmtppassword
+      - EmailService__SmtpUserName=yoursmtpusername
+      - EndpointSuffix=core.windows.net
+      - Keycloak__AdminPassword=admin
+      - Keycloak__AdminUsername=admin-creation
+      - Keycloak__BaseUrl=http://idp_keycloak:8080
+      - Keycloak__ClientId=flutter-app
+      - Keycloak__FrontendUrl=youridpurl
+      - Keycloak__Realm=culinary-code-dev-realm
+      - LocalLlmServer__ServerUrl=http://localhost:4891
+      - RecipeJob__CronSchedule=0 0 2 * * ?
+      - RecipeJob__MinAmount=5
+    ports:
+      - "5114:5114"
+    depends_on:
+      - idp_keycloak
+      - postgres
+
+volumes:
+  backend_data:
+  idp_data:
